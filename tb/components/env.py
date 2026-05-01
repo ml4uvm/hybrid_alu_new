@@ -13,7 +13,7 @@ def to_signed(x):
 
 
 def classify_operand(x):
-    x = to_signed(x)   # 🔥 IMPORTANT FIX
+    x = to_signed(x)
 
     if x == 0:
         return "ZERO"
@@ -29,14 +29,13 @@ def get_bin(opcode, a, b):
     return (opcode, classify_operand(a), classify_operand(b))
 
 
-TOTAL_BINS = 8 * 4 * 4  # opcode × a_type × b_type
+TOTAL_BINS = 8 * 4 * 4
 covered_bins = set()
 
 # COVERAGE + CSV LOGGER
 class CoverageExport(uvm_analysis_export):
 
     def build_phase(self):
-        # bind write method (required for pyuvm)
         self.write = self.write
 
     def start_of_simulation_phase(self):
@@ -44,11 +43,12 @@ class CoverageExport(uvm_analysis_export):
         self.log_file = open("results/coverage_log.csv", "w", newline="")
         self.writer   = csv.writer(self.log_file)
 
-        # UPDATED CSV HEADER
+        # 🔥 UPDATED HEADER (added mode)
         self.writer.writerow([
             "opcode", "a_type", "b_type",
             "result", "zero",
-            "cov_gain", "gain_label"
+            "cov_gain", "gain_label",
+            "mode"   # 🔥 NEW
         ])
 
     def write(self, item):
@@ -66,8 +66,10 @@ class CoverageExport(uvm_analysis_export):
 
         coverage_gain = new_cov - old_cov
 
-        # NEW LINE (ML label)
         gain_label = 1 if coverage_gain > 0 else 0
+
+        # 🔥 NEW: safely get mode
+        mode = getattr(item, "mode", "unknown")
 
         self.writer.writerow([
             item.opcode,
@@ -76,11 +78,14 @@ class CoverageExport(uvm_analysis_export):
             item.result,
             item.zero,
             coverage_gain,
-            gain_label
+            gain_label,
+            mode   # 🔥 NEW
         ])
+
     def final_phase(self):
         self.log_file.close()
         print(f"Coverage: {len(covered_bins)}/{TOTAL_BINS} bins hit")
+
 
 #  AGENT
 class ALUAgent(uvm_agent):
@@ -93,6 +98,7 @@ class ALUAgent(uvm_agent):
     def connect_phase(self):
         self.driver.seq_item_port.connect(self.seqr.seq_item_export)
 
+
 #  ENVIRONMENT
 class ALUEnv(uvm_env):
 
@@ -102,8 +108,8 @@ class ALUEnv(uvm_env):
         self.scoreboard = ALUScoreboard("scoreboard", self)
 
     def connect_phase(self):
-        # Monitor → Coverage (ML data)
+        # Monitor → Coverage
         self.agent.monitor.ap.connect(self.cov_export)
 
-        # Monitor → Scoreboard (correctness)
+        # Monitor → Scoreboard
         self.agent.monitor.ap.connect(self.scoreboard.analysis_export)
