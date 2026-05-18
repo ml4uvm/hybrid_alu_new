@@ -13,14 +13,39 @@ class ALUTest(uvm_test):
         self.raise_objection()
 
         # =====================================================
-        # BASELINE MODE (random)
+        # SELECT EXECUTION MODE
         # =====================================================
-        #seq = ALUSequence("seq", num_tests=300, use_ml=False)
+
+        MODE = "hybrid"     # "baseline" or "hybrid"
 
         # =====================================================
-        # ML MODE (clustered testcases)
+        # BASELINE MODE (pure random)
         # =====================================================
-        seq = ALUSequence("seq", use_ml=True)
+
+        if MODE == "baseline":
+            print("[TEST] Running BASELINE mode")
+
+            seq = ALUSequence(
+                "seq",
+                num_tests=300,
+                use_ml=False
+            )
+
+        # =====================================================
+        # HYBRID MODE (ML + random exploration)
+        # =====================================================
+
+        elif MODE == "hybrid":
+            print("[TEST] Running HYBRID mode")
+
+            seq = ALUSequence(
+                "seq",
+                num_tests=300,
+                use_ml=True
+            )
+
+        else:
+            raise ValueError(f"Unknown MODE: {MODE}")
 
         await seq.start(self.env.agent.seqr)
 
