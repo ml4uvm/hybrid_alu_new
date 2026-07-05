@@ -32,6 +32,11 @@ def classify_operand(x):
 def get_bin(opcode, a, b):
     return (opcode, classify_operand(a), classify_operand(b))
 
+# =========================================================
+# Gap-filling support (Hybrid ALU)
+# =========================================================
+def get_bin_types(opcode, a_type, b_type):
+    return (opcode, a_type, b_type)
 
 # =========================================================
 # GLOBAL COVERAGE TRACKING
