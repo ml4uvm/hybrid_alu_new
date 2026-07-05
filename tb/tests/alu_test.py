@@ -5,7 +5,6 @@ from tb.sequences.sequence import ALUSequence
 
 
 class ALUTest(uvm_test):
-
     def build_phase(self):
         self.env = ALUEnv("env", self)
 
@@ -13,45 +12,18 @@ class ALUTest(uvm_test):
         self.raise_objection()
 
         # =====================================================
-        # SELECT EXECUTION MODE
+        # BASELINE MODE (CRV/CDV comparison)
         # =====================================================
-
-        MODE = "hybrid"     # "baseline" or "hybrid"
-
-        # Common testcase count
-        NUM_TESTS = 300
+        seq = ALUSequence("seq", total_budget=512, use_hybrid=False)
 
         # =====================================================
-        # BASELINE MODE (pure random)
+        # HYBRID MODE (ML pool -> ordered gap filling)
+        # Budget matches the offline ALU paper's Table I testcase
+        # counts: 128, 192, 256, 384, 512
         # =====================================================
-
-        if MODE == "baseline":
-            print("[TEST] Running BASELINE mode")
-
-            seq = ALUSequence(
-                "seq",
-                num_tests=NUM_TESTS,
-                use_ml=False
-            )
-
-        # =====================================================
-        # HYBRID MODE (ML + random exploration)
-        # =====================================================
-
-        elif MODE == "hybrid":
-            print("[TEST] Running HYBRID mode")
-
-            seq = ALUSequence(
-                "seq",
-                num_tests=NUM_TESTS,
-                use_ml=True
-            )
-
-        else:
-            raise ValueError(f"Unknown MODE: {MODE}")
+        # seq = ALUSequence("seq", total_budget=512, use_hybrid=True)
 
         await seq.start(self.env.agent.seqr)
-
         self.drop_objection()
 
 
